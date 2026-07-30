@@ -5,7 +5,7 @@ import speech_recognition as sr
 import time
 
 # --- PASTE YOUR API KEY HERE ---
-API_KEY = "AIzaSyAmqpofnKnIeUl7juM-iQD6oFgcNYofQGg"
+API_KEY = ""
 
 # 1. Setup Brain (Using the model from YOUR list)
 try:

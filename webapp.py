@@ -4,7 +4,7 @@ import pyttsx3
 import speech_recognition as sr
 
 # --- CONFIGURATION ---
-API_KEY = "AIzaSyAmqpofnKnIeUl7juM-iQD6oFgcNYofQGg"
+API_KEY = ""
 
 genai.configure(api_key=API_KEY)
 

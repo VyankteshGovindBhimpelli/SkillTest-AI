@@ -1,7 +1,7 @@
 from google import genai
 
 # The new SDK uses a unified Client object
-client = genai.Client(api_key="AIzaSyAmqpofnKnIeUl7juM-iQD6oFgcNYofQGg")
+client = genai.Client(api_key="")
 
 # Generate content using the new stateless method
 response = client.models.generate_content(
