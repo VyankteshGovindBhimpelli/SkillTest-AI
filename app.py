@@ -1,79 +1,103 @@
-
-import google.generativeai as genai
-import pyttsx3
+import os
+import gradio as gr
+from google import genai
 import speech_recognition as sr
-import time
+from gtts import gTTS
 
-# --- PASTE YOUR API KEY HERE ---
-API_KEY = ""
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "GEMINI_API_KEY")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-# 1. Setup Brain (Using the model from YOUR list)
-try:
-    genai.configure(api_key=API_KEY)
-    
-    # We are using 'gemini-2.5-flash' because it appeared in your list
-    model = genai.GenerativeModel('models/gemini-2.5-flash') 
-    chat = model.start_chat(history=[])
-    print("SUCCESS: Connected to Google AI!")
-    
-except Exception as e:
-    print(f"Error connecting to Google: {e}")
+SYSTEM_PROMPT = """
+You are a Senior Full Stack AI Technical Interviewer.
+Ask clear, domain-specific technical questions (Java, Python, React, SQL, Cloud).
+Keep answers structured and brief. Evaluation should cover clarity and technical correctness.
+"""
 
-# 2. Setup Mouth (Voice)
-engine = pyttsx3.init()
-engine.setProperty('rate', 160) 
+def transcribe_audio(audio_path):
+    recognizer = sr.Recognizer()
+    try:
+        with sr.AudioFile(audio_path) as source:
+            audio_data = recognizer.record(source)
+            return recognizer.recognize_google(audio_data)
+    except Exception:
+        return None
 
-# 3. Setup Ears (Microphone)
-recognizer = sr.Recognizer()
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')
+    output_audio = "response.mp3"
+    tts.save(output_audio)
+    return output_audio
 
-def speak(text):
-    print(f"AI: {text}")
-    engine.say(text)
-    engine.runAndWait()
+def respond(audio_input, text_input, domain, history):
+    user_message = ""
+    if audio_input is not None:
+        user_message = transcribe_audio(audio_input)
+    elif text_input:
+        user_message = text_input
 
-def listen():
-    with sr.Microphone() as source:
-        print("\nListening... (Speak now!)")
-        # Adjust for mobile data/hotspot noise
-        recognizer.adjust_for_ambient_noise(source, duration=1.0)
-        try:
-            # Increased timeout for mobile data
-            audio = recognizer.listen(source, timeout=10)
-            print("Thinking...")
-            text = recognizer.recognize_google(audio)
-            print(f"You said: {text}")
-            return text
-        except Exception:
-            return None
+    if not user_message:
+        return history, None, "", "Mic madhun awaz ala nahi, punha prayatna kara."
 
-# --- MAIN LOOP ---
-print("--------------------------------------------------")
-print("AI INTERVIEWER IS READY!")
-print("--------------------------------------------------")
-
-speak("Hello Venkatesh! I am ready. Please introduce yourself.")
-
-while True:
-    user_input = listen()
-    
-    if user_input is None:
-        continue 
-        
-    if "quit" in user_input.lower():
-        speak("Goodbye!")
-        break
-    
-    # Instructions for the AI
-    prompt = (
-        f"User said: '{user_input}'. "
-        "Act as an English interviewer. "
-        "Correct my grammar mistakes gently, then ask the next question."
-    )
+    prompt = f"{SYSTEM_PROMPT}\nTarget Domain: {domain}\nConversation History: {history}\nUser: {user_message}\nAI:"
     
     try:
-        response = chat.send_message(prompt)
-        speak(response.text)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        bot_reply = response.text
     except Exception as e:
-        print(f"Error: {e}")
-        # If this happens, it is likely the API Key or Model Name again
-        speak("I got an error. Please read the text on the screen.")
+        bot_reply = f"API Error: {str(e)}"
+
+    audio_reply = text_to_speech(bot_reply)
+    history.append((user_message, bot_reply))
+
+    return history, audio_reply, "", "Interview Session Active 🟢"
+
+# Custom Modern Dark Theme UI
+custom_css = """
+body { background: #0b0f19; font-family: 'Inter', sans-serif; color: #f3f4f6; }
+.gradio-container { max-width: 1000px !important; margin: auto; }
+.header-box { text-align: center; padding: 20px; background: linear-gradient(135deg, #1e1b4b, #0f172a); border-radius: 12px; margin-bottom: 20px; border: 1px solid #312e81; }
+.header-title { font-size: 30px; font-weight: 800; color: #38bdf8; letter-spacing: -0.5px; }
+.header-sub { color: #94a3b8; font-size: 14px; margin-top: 5px; }
+"""
+
+with gr.Blocks(css=custom_css, title="SkillTest AI — Pro") as demo:
+    gr.HTML("""
+    <div class="header-box">
+        <div class="header-title">⚡ SkillTest AI — Full Stack Mock Interviewer</div>
+        <div class="header-sub">Practice Java, Python, React & Database Interviews with Real-time Voice AI</div>
+    </div>
+    """)
+
+    with gr.Row():
+        domain_selector = gr.Dropdown(
+            choices=["Java Full Stack", "Python & AI/ML", "React & Frontend", "SQL & Database", "System Design"],
+            value="Java Full Stack",
+            label="🎯 Select Target Job Role / Domain"
+        )
+        status = gr.Textbox(value="Ready", label="Session Status 📡", interactive=False)
+
+    chatbot = gr.Chatbot(label="💬 Live AI Interview Transcript", height=380)
+
+    with gr.Row():
+        audio_input = gr.Audio(sources=["microphone"], type="filepath", label="🎙️ Voice Answer (Speak Here)")
+        text_input = gr.Textbox(placeholder="Type your technical response here...", label="⌨️ Text Answer")
+
+    audio_output = gr.Audio(label="🔊 AI Interviewer Response Audio", autoplay=True)
+
+    with gr.Row():
+        submit_btn = gr.Button("Submit Response 🚀", variant="primary")
+        clear_btn = gr.Button("Reset Conversation 🔄")
+
+    submit_btn.click(
+        fn=respond,
+        inputs=[audio_input, text_input, domain_selector, chatbot],
+        outputs=[chatbot, audio_output, text_input, status]
+    )
+
+    clear_btn.click(lambda: ([], None, "", "Session Reset"), None, [chatbot, audio_output, text_input, status])
+
+if __name__ == "__main__":
+    demo.launch(share=False)

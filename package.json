@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "@google/genai": "^2.27.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1"
+  },
+  "name": "pythonprojectlikeduo",
+  "version": "1.0.0",
+  "description": "SkillTest AI is an interactive AI-powered application designed to help job seekers, students, and English learners practice interview skills and improve spoken English. It integrates Google's Gemini AI, speech recognition, voice synthesis (TTS), and an interactive web interface using Gradio.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VyankteshGovindBhimpelli/SkillTest-AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VyankteshGovindBhimpelli/SkillTest-AI/issues"
+  },
+  "homepage": "https://github.com/VyankteshGovindBhimpelli/SkillTest-AI#readme"
+}
