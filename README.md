@@ -1,3 +1,5 @@
+
+
 # 🎓 SkillTest AI - AI English Interviewer & Coach
 
 SkillTest AI is an interactive AI-powered application designed to help job seekers, students, and English learners practice interview skills and improve spoken English. It integrates Google's Gemini AI, speech recognition, voice synthesis (TTS), and an interactive web interface using Gradio.
